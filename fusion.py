@@ -10,12 +10,22 @@ class Fusion(abc.ABC):
 
     def average_selected_models(self, selected_parties, party_models):
         with torch.no_grad():
-            sum_vec = nn.utils.parameters_to_vector(party_models[selected_parties[0]].parameters())
+            # 确保第一个模型在正确的设备上
+            first_model = party_models[selected_parties[0]]
+            device = next(first_model.parameters()).device
+            
+            sum_vec = nn.utils.parameters_to_vector(first_model.parameters())
             if len(selected_parties) > 1:
                 for i in range(1, len(selected_parties)):
-                    sum_vec += nn.utils.parameters_to_vector(party_models[selected_parties[i]].parameters())
+                    model = party_models[selected_parties[i]]
+                    # 确保模型在同一设备上
+                    model = model.to(device)
+                    sum_vec += nn.utils.parameters_to_vector(model.parameters())
                 sum_vec /= len(selected_parties)
+            
+            # 创建结果模型并确保在正确设备上
             model = copy.deepcopy(party_models[0])
+            model = model.to(device)
             nn.utils.vector_to_parameters(sum_vec, model.parameters())
         return model.state_dict()
 

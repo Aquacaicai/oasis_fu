@@ -32,6 +32,14 @@ class Utils:
                 correct += (predicted == labels).sum().item()
         return 100.0 * correct / total
 
+    @staticmethod
+    def poison_image(image, poison_pixel_value=1.0, square_size=6):
+        """Add a backdoor trigger to an image"""
+        poisoned_img = image.clone()
+        # Add white square in bottom-right corner
+        poisoned_img[:, -square_size:, -square_size:] = poison_pixel_value
+        return poisoned_img
+
 def add_backdoor(images, labels, target_class=0, poison_frac=0.1, square_size=6):
     import torch
     poisoned_images, poisoned_labels = images.clone(), labels.clone()
